@@ -35,9 +35,43 @@ style.use("ggplot") #styling for matplotlib
 f = Figure() #matplotlib figure
 a = f.add_subplot(111)
 
+
+#Default settings:
 exchange = 'BTC Markets' #Starting exchange
 programName='btcmarkets'
 dataCounter = 9000 #Number will force update
+
+resampleSize = '15min' #default sample size = 15min
+dataPace  ='1d' #default graph has a days worth of pricing data
+candleWidth = '.008' #default candle width
+## End default settings
+
+
+
+def changeTimeFrame(timeFrame):
+    global dataPace
+    global dataCounter
+
+    if timeFrame == '7d' and resampleSize == '1min': #Will be too ugly
+        popupmsg('Too much data selected, choose a smaller time frame or OHLC')
+    else:
+        dataPace = timeFrame
+        dataCounter = 9000 #Forces an update
+
+def changeSampleSize(size, width):
+    global resampleSize
+    global dataCounter
+    global candleWidth
+
+    if dataPace == '7d' and resampleSize == '1min': #Will be too ugly
+        popupmsg('Too much data selected, choose a smaller time frame or OHLC')
+    elif dataPace == 'tick':
+        popupmsg("You're curently viewing tick data not OHLC")
+    else:
+        resampleSize = size
+        dataCounter = 9000 #force update
+        candleWidth = width
+
 
 
 def changeExchange(whatExchange, pn):
@@ -52,17 +86,17 @@ def changeExchange(whatExchange, pn):
 
 
 
-
+# Pop up msg will be used to give the user an important info or throw an error
 def popupmsg(msg):
     popup = tk.Tk() #creating a new tk instance
     
-    popup.wm_title('!')
-    label = ttk.Label(popup,text=msg, font=NORMAL_FONT)
+    popup.wm_title('!') #title on window will be '!'
+    label = ttk.Label(popup,text=msg, font=NORMAL_FONT) #Creating the label: The text will be whats passed through and in normal font
     label.pack(side="top", fill='x', pady=10)
 
-    b1= ttk.Button(popup, text='Okay', command=popup.destroy)
+    b1= ttk.Button(popup, text='Okay', command=popup.destroy) #Creating a button on the popup window once clicked will close popup
     b1.pack()
-    popup.mainloop()
+    popup.mainloop() #run main loop of pop up
 
 
 #animate function for live graphing core of data crunch
@@ -88,9 +122,8 @@ def animate(rate):
     a.legend(bbox_to_anchor=(0,1.02,1,.102),loc=3,ncol=2,borderaxespad=0)
 
     
-    title = 'ETH USD Prices\nLast Price in BTC: '+str(buys['price'][499]) #Title for graph
+    title = 'ETH USD Prices\nLast Price in BTC: '+str(buys['price'][499]) #Title for graph  ## Price index is pulling the last given index of a trade in json for latest data
     a.set_title(title) #initializing title
-
 
 class EtherBody(tk.Tk):#Inherits tk class
     def __init__(self, *args, **kwargs): #Self implied, *args = arguments, **kewargs = key words args(dictionaries)
@@ -120,7 +153,30 @@ class EtherBody(tk.Tk):#Inherits tk class
         exchangeChoice.add_command(label='Coinmama', command = lambda: changeExchange('Coinmama','coinmama'))
         exchangeChoice.add_command(label='CEX.io', command = lambda: changeExchange('CEX.io','cexio'))
         exchangeChoice.add_command(label='BTC Markets', command = lambda: changeExchange('BTC Markets','btcmarkets'))
+        # Adding the menu to the overall menu
+        menuBar.add_cascade(label='Exchange', menu = exchangeChoice)
 
+        dataTimeFrame = tk.Menu(menuBar, tearoff=1)
+        dataTimeFrame.add_command(label="Tick", command = lambda: changeTimeFrame("tick"))
+        dataTimeFrame.add_command(label="1 Day", command = lambda: changeTimeFrame("1d"))
+        dataTimeFrame.add_command(label="3 Day", command = lambda: changeTimeFrame("3d"))
+        dataTimeFrame.add_command(label="1 Week", command = lambda: changeTimeFrame("7d"))
+        #Adding time frame menu to overall menu
+        menuBar.add_cascade(label='Time Frame',menu=dataTimeFrame)
+
+        ## OHLC = Open High Low Close    OHLC conflicts with functions -> added an x
+        OHLCX = tk.Menu(menuBar, tearoff=1)
+        OHLCX.add_command(label="Tick", command = lambda: changeTimeFrame("tick"))
+
+        #Change sample size takes the program name and 2nd param = candlestick width
+        OHLCX.add_command(label="1 Minute", command = lambda: changeSampleSize("1min",0.0005))
+        OHLCX.add_command(label="5 Minute", command = lambda: changeSampleSize("5min",0.003))
+        OHLCX.add_command(label="15 Minute", command = lambda: changeSampleSize("15min",0.008))
+        OHLCX.add_command(label="30 Minute", command = lambda: changeSampleSize("30min",0.016))
+        OHLCX.add_command(label="1 Hour", command = lambda: changeSampleSize("1h",0.032))
+        OHLCX.add_command(label="3 Hour", command = lambda: changeSampleSize("3h",0.096))
+        
+        menuBar.add_cascade(label='OHLC Index', menu=OHLCX)
 
 
 
