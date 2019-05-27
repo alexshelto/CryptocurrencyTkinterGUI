@@ -55,92 +55,68 @@ SMAS = [] #Simple moving average
 
 
 
-
-
-def addTopIndicator(option):
+def addIndicator(option, where):
     global topIndicator
-    global forceUpdate
-
-    if dataPace == 'tick':
-        popupmsg('Indicators in tick data not available')
-    elif option == 'none':
-        topIndicator = option
-        forceUpdate = 9000
-    elif option == 'rsi':
-        rsiP = tk.Tk()
-        rsiP.wm_title('Periods?')
-        label = ttk.Label(rsiP, text='Choose how many periods you want each RSI calculation to consider: ')
-        label.pack(side='top', fill='x', pady=10)
-
-        e = ttk.Entry(rsiP)
-        e.insert(0,14) #Defualt inserting a 14 into rsi
-        e.pack()
-        e.focus_set()
-
-        def callback():
-            global topIndicator
-            global forceUpdate
-
-            periods = e.get()
-            group = []
-            group.append('rsi')
-            group.append(periods)
-
-            topIndicator = group
-            forceUpdate = 9000
-            print("Set top indicator to: ", group)
-
-            rsiP.destroy()
-        b = ttk.Button(rsiP, text='Submit', width=10, command=callback)
-        b.pack()
-        tk.mainloop()
-
-    elif option == 'macd':
-        topIndicator = 'macd'
-        forceUpdate = 9000
-
-
-def addBottomIndicator(option):
     global bottomIndicator
+    global mainIndicator
     global forceUpdate
 
-    if dataPace == 'tick':
-        popupmsg('Indicators in tick data not available')
-    elif option == 'none':
-        bottomIndicator = option
-        forceUpdate = 9000
-    elif option == 'rsi':
-        rsiP = tk.Tk()
-        rsiP.wm_title('Periods?')
-        label = ttk.Label(rsiP, text='Choose how many periods you want each RSI calculation to consider: ')
-        label.pack(side='top', fill='x', pady=10)
+    #Adding indicators to the top:
+    if where != 'main':
+        if dataPace == 'tick':
+            popupmsg('Indicators in tick data is not available')
+        elif option == 'none':
+            if where == 'top':
+                topIndicator = option
+            else:
+                bottomIndicator = option
+            forceUpdate = 9000 #Forcing an update after the indicator change
+        elif option == 'rsi':
+            #Must create a window to ask user by what period do they want rsi calculated in: default = 14 days
+            rsiQuestion = tk.Tk()
+            rsiQuestion.wm_title('Period?')
 
-        e = ttk.Entry(rsiP)
-        e.insert(0,14) #Defualt inserting a 14 into rsi
-        e.pack()
-        e.focus_set()
+            label = ttk.Label(rsiQuestion, text='Choose how many periods you want each RSI calculation to consider ')
+            label.pack(side='top')
 
-        def callback():
-            global bottomIndicator
-            global forceUpdate
+            answer = tk.Entry(rsiQuestion) #Placing the entry inside of the widnow rsiQuestion
+            answer.insert(0,14) #inserting 14 into the first index for a default value:
+            answer.pack()
+            answer.focus_set()
 
-            periods = e.get()
-            group = []
-            group.append('rsi')
-            group.append(periods)
+            def callBack(where):
+                global topIndicator
+                global bottomIndicator
+                global forceUpdate
 
-            bottomIndicator = group
-            forceUpdate = 9000
-            print("Set bottom indicator to: ", group)
+                periods = answer.get()
+                group = []
+                group.append('rsi')
+                group.append(periods)
 
-            rsiP.destroy()
-        b = ttk.Button(rsiP, text='Submit', width=10, command=callback)
-        b.pack()
-        tk.mainloop()
+                if where == 'top':
+                    topIndicator = group
+                    print("Set top indicator to: ", group)
+                elif where == 'bottom':
+                    bottomIndicator = group
+                    print("Set bottom indicator to: ", group)
+                else:
+                    print("Error")
+                #Forcing a reset
+                forceUpdate = 9000
+                rsiQuestion.destroy()
+            
+            b = ttk.Button(rsiQuestion, text='Submit', width=10, command= lambda: callBack(where))
+            b.pack()
+            tk.mainloop()
+        
+        elif option =='macd':
+            if where == 'top':
+                topIndicator = 'macd'
+            elif where == 'bottom':
+                bottomIndicator = 'macd'
+            forceUpdate = 9000 #Forcing update
 
-    elif option == 'macd':
-        bottomIndicator = 'macd'
-        forceUpdate = 9000
 
 def addMainIndicator(option):
     pass
@@ -283,25 +259,25 @@ class EtherBody(tk.Tk):#Inherits tk class
         
         #Indicator menu:
         topIndicator = tk.Menu(menuBar, tearoff=1)
-        topIndicator.add_command(label='None', command= lambda: addTopIndicator('none', 'top'))
-        topIndicator.add_command(label='RSI', command= lambda: addTopIndicator('rsi', 'top')) #Relative strength index: default = 14
-        topIndicator.add_command(label='MACD', command= lambda: addTopIndicator('macd', 'top'))
+        topIndicator.add_command(label='None', command= lambda: addIndicator('none', 'top'))
+        topIndicator.add_command(label='RSI', command= lambda: addIndicator('rsi', 'top')) #Relative strength index: default = 14
+        topIndicator.add_command(label='MACD', command= lambda: addIndicator('macd', 'top'))
 
         menuBar.add_cascade(label = 'Top Indicator', menu= topIndicator)
 
         #Main graph Indicator
         mainIndicator = tk.Menu(menuBar, tearoff=1)
-        mainIndicator.add_command(label='None', command= lambda: addMainIndicator('none', 'main'))
-        mainIndicator.add_command(label='SMA', command= lambda: addMainIndicator('sma', 'main')) #Simple moving average
-        mainIndicator.add_command(label='EMA', command= lambda: addMainIndicator('ema', 'main')) #Exponential moving average
+        mainIndicator.add_command(label='None', command= lambda: addIndicator('none', 'main'))
+        mainIndicator.add_command(label='SMA', command= lambda: addIndicator('sma', 'main')) #Simple moving average
+        mainIndicator.add_command(label='EMA', command= lambda: addIndicator('ema', 'main')) #Exponential moving average
 
         menuBar.add_cascade(label = 'Main / Middle Indicator', menu= mainIndicator)
 
         # Bottom indicator 
         bottomIndicator = tk.Menu(menuBar, tearoff=1)
-        bottomIndicator.add_command(label='None', command= lambda: addBottomIndicator('none', 'bottom'))
-        bottomIndicator.add_command(label='RSI', command= lambda: addBottomIndicator('rsi', 'bottom')) #relative strength index
-        bottomIndicator.add_command(label='MACD', command= lambda: addBottomIndicator('macd', 'bottom'))
+        bottomIndicator.add_command(label='None', command= lambda: addIndicator('none', 'bottom'))
+        bottomIndicator.add_command(label='RSI', command= lambda: addIndicator('rsi', 'bottom')) #relative strength index
+        bottomIndicator.add_command(label='MACD', command= lambda: addIndicator('macd', 'bottom'))
 
         menuBar.add_cascade(label = 'Bottom Indicator', menu= bottomIndicator)
 
