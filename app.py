@@ -119,7 +119,14 @@ def addIndicator(option, where):
 
 
 def addMainIndicator(option):
-    pass
+    global mainIndicator
+    global forceUpdate
+
+    if dataPace == 'tick':
+        popupmsg("Indicators in tick data not supported")
+    
+    if option != 'none':
+        if mainIndicator == 'none': #is the main indicator none
 
 
 
@@ -312,7 +319,7 @@ class StartPage(tk.Frame):#inherits from frame
         button = ttk.Button(self, text='Agree', command=lambda: controller.show_frame(EtherPage))
         button.pack()
 
-        button1 = ttk.Button(self, text='Disagree', command=quit)
+        button1 = ttk.Button(self, text='Exit', command=quit)
         button1.pack()
 
         
