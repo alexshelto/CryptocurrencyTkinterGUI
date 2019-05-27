@@ -39,28 +39,131 @@ a = f.add_subplot(111)
 #Default settings:
 exchange = 'BTC Markets' #Starting exchange
 programName='btcmarkets'
-dataCounter = 9000 #Number will force update
+forceUpdate = 9000 #Number will force update
 
 resampleSize = '15min' #default sample size = 15min
 dataPace  ='1d' #default graph has a days worth of pricing data
 candleWidth = '.008' #default candle width
+
+topIndicator = 'none'
+bottomIndicator = 'none'
+mainIndicator = 'none'
+
+EMAS = [] #Exponential moving average
+SMAS = [] #Simple moving average
 ## End default settings
+
+
+
+
+
+def addTopIndicator(option):
+    global topIndicator
+    global forceUpdate
+
+    if dataPace == 'tick':
+        popupmsg('Indicators in tick data not available')
+    elif option == 'none':
+        topIndicator = option
+        forceUpdate = 9000
+    elif option == 'rsi':
+        rsiP = tk.Tk()
+        rsiP.wm_title('Periods?')
+        label = ttk.Label(rsiP, text='Choose how many periods you want each RSI calculation to consider: ')
+        label.pack(side='top', fill='x', pady=10)
+
+        e = ttk.Entry(rsiP)
+        e.insert(0,14) #Defualt inserting a 14 into rsi
+        e.pack()
+        e.focus_set()
+
+        def callback():
+            global topIndicator
+            global forceUpdate
+
+            periods = e.get()
+            group = []
+            group.append('rsi')
+            group.append(periods)
+
+            topIndicator = group
+            forceUpdate = 9000
+            print("Set top indicator to: ", group)
+
+            rsiP.destroy()
+        b = ttk.Button(rsiP, text='Submit', width=10, command=callback)
+        b.pack()
+        tk.mainloop()
+
+    elif option == 'macd':
+        topIndicator = 'macd'
+        forceUpdate = 9000
+
+
+def addBottomIndicator(option):
+    global bottomIndicator
+    global forceUpdate
+
+    if dataPace == 'tick':
+        popupmsg('Indicators in tick data not available')
+    elif option == 'none':
+        bottomIndicator = option
+        forceUpdate = 9000
+    elif option == 'rsi':
+        rsiP = tk.Tk()
+        rsiP.wm_title('Periods?')
+        label = ttk.Label(rsiP, text='Choose how many periods you want each RSI calculation to consider: ')
+        label.pack(side='top', fill='x', pady=10)
+
+        e = ttk.Entry(rsiP)
+        e.insert(0,14) #Defualt inserting a 14 into rsi
+        e.pack()
+        e.focus_set()
+
+        def callback():
+            global bottomIndicator
+            global forceUpdate
+
+            periods = e.get()
+            group = []
+            group.append('rsi')
+            group.append(periods)
+
+            bottomIndicator = group
+            forceUpdate = 9000
+            print("Set bottom indicator to: ", group)
+
+            rsiP.destroy()
+        b = ttk.Button(rsiP, text='Submit', width=10, command=callback)
+        b.pack()
+        tk.mainloop()
+
+    elif option == 'macd':
+        bottomIndicator = 'macd'
+        forceUpdate = 9000
+
+def addMainIndicator(option):
+    pass
+
+
+
+
 
 
 
 def changeTimeFrame(timeFrame):
     global dataPace
-    global dataCounter
+    global forceUpdate
 
     if timeFrame == '7d' and resampleSize == '1min': #Will be too ugly
         popupmsg('Too much data selected, choose a smaller time frame or OHLC')
     else:
         dataPace = timeFrame
-        dataCounter = 9000 #Forces an update
+        forceUpdate = 9000 #Forces an update
 
 def changeSampleSize(size, width):
     global resampleSize
-    global dataCounter
+    global forceUpdate
     global candleWidth
 
     if dataPace == '7d' and resampleSize == '1min': #Will be too ugly
@@ -69,7 +172,7 @@ def changeSampleSize(size, width):
         popupmsg("You're curently viewing tick data not OHLC")
     else:
         resampleSize = size
-        dataCounter = 9000 #force update
+        forceUpdate = 9000 #force update
         candleWidth = width
 
 
@@ -77,12 +180,12 @@ def changeSampleSize(size, width):
 def changeExchange(whatExchange, pn):
     global exchange #Default exchange
     global programName #What the program variable is
-    global dataCounter #counter force update
+    global forceUpdate #counter force update
 
 # Changing base vars that determine exchanges
     programName = pn
     exchange = whatExchange
-    dataCounter = 9000
+    forceUpdate = 9000
 
 
 
@@ -175,8 +278,34 @@ class EtherBody(tk.Tk):#Inherits tk class
         OHLCX.add_command(label="30 Minute", command = lambda: changeSampleSize("30min",0.016))
         OHLCX.add_command(label="1 Hour", command = lambda: changeSampleSize("1h",0.032))
         OHLCX.add_command(label="3 Hour", command = lambda: changeSampleSize("3h",0.096))
-        
+        #Adding the open high low close menu to the menuBar menu
         menuBar.add_cascade(label='OHLC Index', menu=OHLCX)
+        
+        #Indicator menu:
+        topIndicator = tk.Menu(menuBar, tearoff=1)
+        topIndicator.add_command(label='None', command= lambda: addTopIndicator('none', 'top'))
+        topIndicator.add_command(label='RSI', command= lambda: addTopIndicator('rsi', 'top')) #Relative strength index: default = 14
+        topIndicator.add_command(label='MACD', command= lambda: addTopIndicator('macd', 'top'))
+
+        menuBar.add_cascade(label = 'Top Indicator', menu= topIndicator)
+
+        #Main graph Indicator
+        mainIndicator = tk.Menu(menuBar, tearoff=1)
+        mainIndicator.add_command(label='None', command= lambda: addMainIndicator('none', 'main'))
+        mainIndicator.add_command(label='SMA', command= lambda: addMainIndicator('sma', 'main')) #Simple moving average
+        mainIndicator.add_command(label='EMA', command= lambda: addMainIndicator('ema', 'main')) #Exponential moving average
+
+        menuBar.add_cascade(label = 'Main / Middle Indicator', menu= mainIndicator)
+
+        # Bottom indicator 
+        bottomIndicator = tk.Menu(menuBar, tearoff=1)
+        bottomIndicator.add_command(label='None', command= lambda: addBottomIndicator('none', 'bottom'))
+        bottomIndicator.add_command(label='RSI', command= lambda: addBottomIndicator('rsi', 'bottom')) #relative strength index
+        bottomIndicator.add_command(label='MACD', command= lambda: addBottomIndicator('macd', 'bottom'))
+
+        menuBar.add_cascade(label = 'Bottom Indicator', menu= bottomIndicator)
+
+
 
 
 
