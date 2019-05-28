@@ -122,7 +122,7 @@ def addIndicator(option, where):
 
 
 
-def addMainIndicator(option):
+def addMainIndicator(option, where):
     global mainIndicator
     global forceUpdate
 
@@ -187,6 +187,8 @@ def addMainIndicator(option):
                 button.pack()
                 tk.mainloop()
         else:
+                
+
             if option == 'sma':
                 question = tk.Tk()
                 question.wm_title("Period?")
@@ -201,7 +203,7 @@ def addMainIndicator(option):
                     global mainIndicator
                     global forceUpdate
 
-                    #mainIndicator = []
+                    #mainIndicator = [] 
                     periods = answer.get()
                     group = []
                     group.append('sma')
@@ -389,9 +391,9 @@ class EtherBody(tk.Tk):#Inherits tk class
 
         #Main graph Indicator
         mainIndicator = tk.Menu(menuBar, tearoff=1)
-        mainIndicator.add_command(label='None', command= lambda: addIndicator('none', 'main'))
-        mainIndicator.add_command(label='SMA', command= lambda: addIndicator('sma', 'main')) #Simple moving average
-        mainIndicator.add_command(label='EMA', command= lambda: addIndicator('ema', 'main')) #Exponential moving average
+        mainIndicator.add_command(label='None', command= lambda: addMainIndicator('none', 'main'))
+        mainIndicator.add_command(label='SMA', command= lambda: addMainIndicator('sma', 'main')) #Simple moving average
+        mainIndicator.add_command(label='EMA', command= lambda: addMainIndicator('ema', 'main')) #Exponential moving average
 
         menuBar.add_cascade(label = 'Main / Middle Indicator', menu= mainIndicator)
 
