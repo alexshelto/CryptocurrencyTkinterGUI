@@ -12,7 +12,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 import matplotlib.animation as animation #
 from matplotlib import style
-from matplotlib import pyplot
+from matplotlib import pyplot as plt
+import matplotlib.ticker as mticker #modify dates and ticker in the data
 
 import tkinter as tk #GUI
 from tkinter import ttk #styling
@@ -28,6 +29,9 @@ LARGE_FONT = ("Verdana", 12)
 NORMAL_FONT= ("Verdana", 10)#normal text info
 SMALL_FONT= ("Verdana", 18)#Captions etc
 
+ABOUT_TEXT = '''Program contributers: Alex Shelton
+This program is free to use and alter for any purposes
+Created to learn more about tkinter and make me some money'''
 
 style.use("ggplot") #styling for matplotlib
 
@@ -40,9 +44,10 @@ a = f.add_subplot(111)
 exchange = 'BTC Markets' #Starting exchange
 programName='btcmarkets'
 forceUpdate = 9000 #Number will force update
+paneCount = 1 #Number of windows
 
 resampleSize = '15min' #default sample size = 15min
-dataPace  ='1d' #default graph has a days worth of pricing data
+dataPace  ='tick' #default graph has a days worth of pricing data
 candleWidth = '.008' #default candle width
 
 topIndicator = 'none'
@@ -51,7 +56,75 @@ mainIndicator = 'none'
 
 EMAS = [] #Exponential moving average
 SMAS = [] #Simple moving average
+
+chartLoad = True
 ## End default settings
+
+
+
+
+def tutorial():
+    
+    #Sucsession of tutorial pages. once user leaves one page button takes them to the next page destroying old page
+    
+    def page2():
+        tut.destroy()
+        tut2 = tk.Tk()
+
+        def page3():
+            tut2.destroy()
+            tut3 = tk.Tk()
+
+            tut3.wm_title('part 3')
+            label = ttk.Label(tut3, text='Part 3', font = NORMAL_FONT)
+            label.pack(side='top', fill='x', pady=10)
+            nextB = ttk.Button(tut3, text='Done', command = tut3.destroy)
+            nextB.pack()
+
+            tut3.mainloop()
+
+        tut2.wm_title('part 2')
+        label = ttk.Label(tut2, text='Part 2', font = NORMAL_FONT)
+        label.pack(side='top', fill='x', pady=10)
+        nextB = ttk.Button(tut2, text='Next', command = page3)
+        nextB.pack()
+
+        tut2.mainloop()
+    
+    tut = tk.Tk()
+    tut.wm_title('Tutorial')
+    label = ttk.Label(tut, text='What do you need help with? ', font = NORMAL_FONT)
+    label.pack(side='top', fill='x', pady=10)
+
+    overviewButton = ttk.Button(tut, text="Overview of the application", command = page2)
+    overviewButton.pack()
+
+    howTrade = ttk.Button(tut, text="How do I trade with this client?", command = lambda: popupmsg('not yet completed'))
+    howTrade.pack()
+
+    helpIndicator = ttk.Button(tut, text="Indicator question/help", command = lambda: popupmsg('not yet completed'))
+    helpIndicator.pack()
+
+    tut.mainloop()
+    
+
+
+
+def loadChart(run):
+    global chartLoad
+    if run == 'start':
+        chartLoad = True
+    elif run == 'stop':
+        chartLoad = False
+
+# About inside of help menu gives info about author(s) and program
+def about():
+    about = tk.Tk()
+    about.wm_title('About this application')
+    about.geometry('600x600')
+    label = ttk.Label(about, text = ABOUT_TEXT)
+    label.pack(side='top')
+
 
 
 #Indicators for top and bottom
@@ -216,29 +289,82 @@ def popupmsg(msg):
 
 #animate function for live graphing core of data crunch
 def animate(rate):
+    global refreshRate
+    global forceUpdate
+
+    if chartLoad == True:
+        if paneCount == 1:
+            if dataPace == 'tick':
+                try:
+                    
+                    a = plt.subplot2grid((6,4), (0,0), rowspan=5, colspan=4) #Full grid size, starting point, row span, column span
+                    a2 = plt.subplot2grid((6,4), (5,0), rowspan=1, colspan=4, sharex=a) #sharex shares x intercept with subplot 'a'
 
 
-    #TODO FIx this animate with from the day data pull from web server json
+                    dataLink = 'https://api.btcmarkets.net/market/ETH/BTC/trades?limit=100'
+                    data = urllib.request.urlopen(dataLink) #Accessing the link using requests
+                    data = data.read().decode("utf-8") #deocde to utf8 and read into a json
+                    data = json.loads(data) #size = 500
 
-    dataLink = 'https://api.btcmarkets.net/market/ETH/BTC/trades?limit=100'
-    data = urllib.request.urlopen(dataLink) #Accessing the link using requests
-    data = data.read().decode("utf-8") #deocde to utf8 and read into a json
-    data = json.loads(data) #size = 500
+                    data = pd.DataFrame(data) #use pandas to create a csv
 
-    data = pd.DataFrame(data) #use pandas to create a csv
-    buys = data #dictionary
-    buys["datestamp"] = np.array(buys["date"]).astype("datetime64[s]") #Take the buys from the keyvalue in json
-    buyDates = (buys["datestamp"]).tolist() #Take the dates from buys key value
 
-    a.clear()
-    a.plot_date(buyDates, buys["price"],'#00A3E0', label='Buys') #plotting
+                    buys = data #dictionary
+                    buyDates = data["date"].tolist()
+                    #buys["datestamp"] = np.array(buys["date"]).astype("datetime64[s]") #Take the buys from the keyvalue in json
+                    buyDates = (buys["datestamp"]).tolist() #Take the dates from buys key value
+                    volume = data['amount']
 
-    #Creating a map legend, inside params are just so data cant be covered by legend
-    a.legend(bbox_to_anchor=(0,1.02,1,.102),loc=3,ncol=2,borderaxespad=0)
+                    a.clear()
+                    a.plot_date(buyDates, buys["price"],'#00A3E0', label='Buys') #plotting
+                    a2.fill_between(buyDates,0, volume, facecolor='#183A54' ) #specify min point, data plotted, face color
+                    
+                    a.xaxis.set_major_locator(mticker.MaxNLocator(5)) #
+                    a.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%D %H:M:S'))
+                    
+                    
+                    #Creating a map legend, inside params are just so data cant be covered by legend
+                    a.legend(bbox_to_anchor=(0,1.02,1,.102),loc=3,ncol=2,borderaxespad=0)
+
+                    
+                    title = 'ETH USD Prices\nLast Price in BTC: '+str(buys['price'][499]) #Title for graph  ## Price index is pulling the last given index of a trade in json for latest data
+                    a.set_title(title) #initializing title
+                
+                except Exception as e:
+                    print("Failed because of ", e)
+
+
+
+
+    # #TODO FIx this animate with from the day data pull from web server json
+
+    # dataLink = 'https://api.btcmarkets.net/market/ETH/BTC/trades?limit=100'
+    # data = urllib.request.urlopen(dataLink) #Accessing the link using requests
+    # data = data.read().decode("utf-8") #deocde to utf8 and read into a json
+    # data = json.loads(data) #size = 500
+
+    # data = pd.DataFrame(data) #use pandas to create a csv
+    # buys = data #dictionary
+    # buys["datestamp"] = np.array(buys["date"]).astype("datetime64[s]") #Take the buys from the keyvalue in json
+    # buyDates = (buys["datestamp"]).tolist() #Take the dates from buys key value
+
+    # a.clear()
+    # a.plot_date(buyDates, buys["price"],'#00A3E0', label='Buys') #plotting
+
+    # #Creating a map legend, inside params are just so data cant be covered by legend
+    # a.legend(bbox_to_anchor=(0,1.02,1,.102),loc=3,ncol=2,borderaxespad=0)
 
     
-    title = 'ETH USD Prices\nLast Price in BTC: '+str(buys['price'][499]) #Title for graph  ## Price index is pulling the last given index of a trade in json for latest data
-    a.set_title(title) #initializing title
+    # title = 'ETH USD Prices\nLast Price in BTC: '+str(buys['price'][499]) #Title for graph  ## Price index is pulling the last given index of a trade in json for latest data
+    # a.set_title(title) #initializing title
+
+
+
+
+
+
+
+
 
 class EtherBody(tk.Tk):#Inherits tk class
     def __init__(self, *args, **kwargs): #Self implied, *args = arguments, **kewargs = key words args(dictionaries)
@@ -251,6 +377,8 @@ class EtherBody(tk.Tk):#Inherits tk class
         container.pack(side='top', fill='both',expand=True)
         container.grid_rowconfigure(0, weight=1) #0 = min size
         container.columnconfigure(0,weight=1)
+
+#####     BEGINNING OF MENU CREATIONS     #####
 
         #Creating a menu bar
         menuBar = tk.Menu(container)
@@ -316,6 +444,46 @@ class EtherBody(tk.Tk):#Inherits tk class
         bottomIndicator.add_command(label='MACD', command= lambda: addIndicator('macd', 'bottom'))
 
         menuBar.add_cascade(label = 'Bottom Indicator', menu= bottomIndicator)
+
+        #Trading menu for buy & sell
+        tradeButton = tk.Menu(menuBar, tearoff=1)
+        tradeButton.add_command(label='Manual trading',
+        command = lambda: popupmsg('This is not running yet'))
+
+        tradeButton.add_command(label='Automated trading',
+        command = lambda: popupmsg('This is not running yet'))
+
+        tradeButton.add_separator()
+
+        tradeButton.add_command(label='Quick buy',
+        command = lambda: popupmsg('This is not running yet'))
+
+        tradeButton.add_command(label='Quick sell',
+        command = lambda: popupmsg('This is not running yet'))
+
+        tradeButton.add_separator()
+
+        tradeButton.add_command(label='Set-up quick buy/sell',
+        command = lambda: popupmsg('This is not running yet'))
+
+        menuBar.add_cascade(label='Trading', menu = tradeButton)
+
+        #Start and stop menu:
+        startStop = tk.Menu(menuBar, tearoff=1)
+        startStop.add_command(label = 'Resume', command = lambda: loadChart('start') )
+        startStop.add_command(label = 'Pause', command = lambda: loadChart('stop') )
+
+        menuBar.add_cascade(label = 'Reusme / Pause', menu = startStop)
+
+
+        helpMenu = tk.Menu(menuBar, tearoff = 1)
+        helpMenu.add_command(label = 'Tutorial', command = tutorial)
+        helpMenu.add_command(label = 'About', command = about)
+
+        menuBar.add_cascade(label = 'Help', menu = helpMenu)
+
+        #####     END MENU     #####
+
 
 
 
