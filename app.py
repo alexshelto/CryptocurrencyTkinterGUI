@@ -54,7 +54,7 @@ SMAS = [] #Simple moving average
 ## End default settings
 
 
-
+#Indicators for top and bottom
 def addIndicator(option, where):
     global topIndicator
     global bottomIndicator
@@ -118,10 +118,7 @@ def addIndicator(option, where):
             forceUpdate = 9000 #Forcing update
 
 
-
-
-
-
+# Middle / Main indicator change/adds
 def addMainIndicator(option, where):
     global mainIndicator
     global forceUpdate
@@ -129,121 +126,36 @@ def addMainIndicator(option, where):
     if dataPace == 'tick':
         popupmsg('Indicators in Tick Data not available.')
     
-    if option != 'none': #if no option passed through
-        if mainIndicator == 'none': #If mainIndicator is set to none
-            if option == 'sma':
-                question = tk.Tk()
-                question.wm_title("Period?")
-                label = ttk.Label(question, text='Choose how many periods for SMA')
-                label.pack(side='top', fill='x', pady=10)
-                answer = ttk.Entry(question)
-                answer.insert(0,10)
-                answer.pack()
-                answer.focus_set()
+    if option != 'none':
+        question = tk.Tk()
+        question.wm_title('Periods?')
+        label = ttk.Label(question, text='Choose how many periods for '+option.upper())
+        label.pack(side='top', fill='x', pady=10)
+        answer = ttk.Entry(question)
+        answer.insert(0,10)
+        answer.pack()
+        answer.focus_set()
 
-                def mainCall():
-                    global mainIndicator
-                    global forceUpdate
+        def callBack(option):
+            global mainIndicator
+            global forceUpdate
 
-                    mainIndicator = []
-                    periods = answer.get()
-                    group = []
-                    group.append('sma')
-                    group.append(int(periods))
-                    mainIndicator.append(group)
-                    forceUpdate=9000
-                    print("Middle indicator set to: ", mainIndicator)
-                    question.destroy()
-                
-                button = ttk.Button(question, text='Submit', width=10, command=mainCall )
-                button.pack()
-                tk.mainloop()
+            if(mainIndicator == 'none'):
+                mainIndicator = []
             
-            if option == 'ema':
-                question = tk.Tk()
-                question.wm_title("Period?")
-                label = ttk.Label(question, text='Choose how many periods for EMA')
-                label.pack(side='top', fill='x', pady=10)
-                answer = ttk.Entry(question)
-                answer.insert(0,10)
-                answer.pack()
-                answer.focus_set()
+            periods = answer.get()
+            group = []
+            group.append(option)
+            group.append(int(periods))
+            mainIndicator.append(group)
+            forceUpdate = 9000
+            print('Middle indicator set to: ', mainIndicator)
+            question.destroy()
+        
+        button = ttk.Button(question, text='Submit', width=10, command = lambda: callBack(option))
+        button.pack()
+        tk.mainloop()
 
-                def mainCall():
-                    global mainIndicator
-                    global forceUpdate
-
-                    mainIndicator = []
-                    periods = answer.get()
-                    group = []
-                    group.append('ema')
-                    group.append(int(periods))
-                    mainIndicator.append(group)
-                    forceUpdate=9000
-                    print("Middle indicator set to: ", mainIndicator)
-                    question.destroy()
-                
-                button = ttk.Button(question, text='Submit', width=10, command=mainCall )
-                button.pack()
-                tk.mainloop()
-        else:
-                
-
-            if option == 'sma':
-                question = tk.Tk()
-                question.wm_title("Period?")
-                label = ttk.Label(question, text='Choose how many periods for SMA')
-                label.pack(side='top', fill='x', pady=10)
-                answer = ttk.Entry(question)
-                answer.insert(0,10)
-                answer.pack()
-                answer.focus_set()
-
-                def mainCall():
-                    global mainIndicator
-                    global forceUpdate
-
-                    #mainIndicator = [] 
-                    periods = answer.get()
-                    group = []
-                    group.append('sma')
-                    group.append(int(periods))
-                    mainIndicator.append(group)
-                    forceUpdate=9000
-                    print("Middle indicator set to: ", mainIndicator)
-                    question.destroy()
-                
-                button = ttk.Button(question, text='Submit', width=10, command=mainCall )
-                button.pack()
-                tk.mainloop()
-
-            if option == 'ema':
-                question = tk.Tk()
-                question.wm_title("Period?")
-                label = ttk.Label(question, text='Choose how many periods for EMA')
-                label.pack(side='top', fill='x', pady=10)
-                answer = ttk.Entry(question)
-                answer.insert(0,10)
-                answer.pack()
-                answer.focus_set()
-
-                def mainCall():
-                    global mainIndicator
-                    global forceUpdate
-
-                    #mainIndicator = []
-                    periods = answer.get()
-                    group = []
-                    group.append('ema')
-                    group.append(int(periods))
-                    mainIndicator.append(group)
-                    forceUpdate=9000
-                    print("Middle indicator set to: ", mainIndicator)
-                    question.destroy()
-                
-                button = ttk.Button(question, text='Submit', width=10, command=mainCall )
-                button.pack()
-                tk.mainloop()
     else:
         mainIndicator = 'none'
 
